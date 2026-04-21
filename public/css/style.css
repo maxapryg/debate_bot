@@ -172,16 +172,16 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 80px;
+    padding: 30px 60px;
     background: linear-gradient(135deg, rgba(253, 177, 36, 0.15), rgba(255, 221, 45, 0.15));
-    border: 3px solid var(--color-primary);
-    border-radius: 24px;
+    border: 2px solid var(--color-primary);
+    border-radius: 20px;
     margin-bottom: 30px;
-    font-size: 64px;
-    font-weight: 800;
+    font-size: 48px;
+    font-weight: 700;
     color: var(--color-primary);
-    box-shadow: 0 0 50px rgba(253, 177, 36, 0.5), inset 0 0 30px rgba(253, 177, 36, 0.1);
-    text-shadow: 0 0 20px rgba(253, 177, 36, 0.8);
+    box-shadow: 0 0 40px rgba(253, 177, 36, 0.4), inset 0 0 20px rgba(253, 177, 36, 0.1);
+    text-shadow: 0 0 15px rgba(253, 177, 36, 0.6);
 }
 
 .session-status {
