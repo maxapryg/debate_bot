@@ -317,15 +317,15 @@ body {
     justify-content: center;
     gap: 15px;
     padding: 25px 50px;
-    background: linear-gradient(135deg, rgba(253, 177, 36, 0.2), rgba(255, 221, 45, 0.2));
-    border: 2px solid var(--color-primary);
+    background: linear-gradient(135deg, rgba(115, 176, 119, 0.2), rgba(115, 176, 119, 0.1));
+    border: 2px solid var(--color-green);
     border-radius: 16px;
-    animation: glow 2s infinite;
+    animation: glow-green 2s infinite;
 }
 
-@keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(253, 177, 36, 0.5); }
-    50% { box-shadow: 0 0 40px rgba(253, 177, 36, 0.8); }
+@keyframes glow-green {
+    0%, 100% { box-shadow: 0 0 20px rgba(115, 176, 119, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(115, 176, 119, 0.8); }
 }
 
 .winner-icon {
