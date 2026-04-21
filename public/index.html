@@ -16,12 +16,12 @@
         
         <div id="voting-buttons" class="speaker-buttons">
             <button id="vote-a" class="speaker-btn btn-a" onclick="vote('A')">
-                <span class="speaker-label">Спикер A</span>
+                <span class="speaker-label" id="speaker-a-label">Спикер A</span>
                 <span class="speaker-icon">🟠</span>
             </button>
             
             <button id="vote-b" class="speaker-btn btn-b" onclick="vote('B')">
-                <span class="speaker-label">Спикер B</span>
+                <span class="speaker-label" id="speaker-b-label">Спикер B</span>
                 <span class="speaker-icon">✨</span>
             </button>
         </div>
@@ -53,9 +53,26 @@
                 const data = await response.json();
                 isActive = data.active;
                 updateUI();
+                
+                // Update speaker names if available
+                if (data.speakerAName) {
+                    updateSpeakerNames(data.speakerAName, data.speakerBName);
+                }
             } catch (error) {
                 console.error('Error checking session:', error);
                 document.getElementById('session-status').textContent = 'Ошибка подключения';
+            }
+        }
+
+        function updateSpeakerNames(speakerAName, speakerBName) {
+            document.getElementById('speaker-a-label').textContent = speakerAName || 'Спикер A';
+            document.getElementById('speaker-b-label').textContent = speakerBName || 'Спикер B';
+            
+            // Update confirmation message
+            if (currentVote) {
+                const confirmationEl = document.getElementById('vote-confirmation');
+                const speakerName = currentVote === 'A' ? speakerAName : speakerBName;
+                confirmationEl.querySelector('p').textContent = `Вы проголосовали за ${speakerName || 'Спикера ' + currentVote}`;
             }
         }
 
@@ -124,7 +141,13 @@
             document.getElementById('vote-' + speaker.toLowerCase()).classList.add('selected');
             
             confirmationEl.style.display = 'block';
-            confirmationEl.querySelector('p').textContent = `Вы проголосовали за Спикера ${speaker}`;
+            
+            // Get current speaker name
+            const speakerAName = document.getElementById('speaker-a-label').textContent;
+            const speakerBName = document.getElementById('speaker-b-label').textContent;
+            const speakerName = speaker === 'A' ? speakerAName : speakerBName;
+            
+            confirmationEl.querySelector('p').textContent = `Вы проголосовали за ${speakerName}`;
         }
 
         // Listen for real-time updates
