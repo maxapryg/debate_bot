@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Голосование за спикера</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="voting-container">
+        <h1>За кого вы голосуете?</h1>
+        
+        <div id="session-status" class="status-message">
+            Загрузка...
+        </div>
+        
+        <div id="voting-buttons" class="speaker-buttons">
+            <button id="vote-a" class="speaker-btn btn-a" onclick="vote('A')">
+                <span class="speaker-label">Спикер A</span>
+                <span class="speaker-icon">🔵</span>
+            </button>
+            
+            <button id="vote-b" class="speaker-btn btn-b" onclick="vote('B')">
+                <span class="speaker-label">Спикер B</span>
+                <span class="speaker-icon">🔴</span>
+            </button>
+        </div>
+        
+        <div id="vote-confirmation" class="confirmation-message" style="display: none;">
+            <span class="check-icon">✓</span>
+            <p>Ваш голос принят!</p>
+            <p class="small-text">Вы можете изменить свой голос в любой момент</p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let voterId = localStorage.getItem('debateVoterId');
+        let currentVote = localStorage.getItem('debateCurrentVote');
+        let isActive = false;
+
+        // Initialize voter ID
+        if (!voterId) {
+            voterId = 'voter_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('debateVoterId', voterId);
+        }
+
+        // Check session status on load
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/results');
+                const data = await response.json();
+                isActive = data.active;
+                updateUI();
+            } catch (error) {
+                console.error('Error checking session:', error);
+                document.getElementById('session-status').textContent = 'Ошибка подключения';
+            }
+        }
+
+        function updateUI() {
+            const statusEl = document.getElementById('session-status');
+            const buttonsEl = document.getElementById('voting-buttons');
+            
+            if (!isActive) {
+                statusEl.textContent = 'Голосование ещё не началось или завершено';
+                statusEl.className = 'status-message status-inactive';
+                buttonsEl.style.pointerEvents = 'none';
+                buttonsEl.style.opacity = '0.5';
+            } else {
+                statusEl.textContent = 'Голосование активно!';
+                statusEl.className = 'status-message status-active';
+                buttonsEl.style.pointerEvents = 'auto';
+                buttonsEl.style.opacity = '1';
+                
+                // Show current vote if exists
+                if (currentVote) {
+                    showConfirmation(currentVote);
+                }
+            }
+        }
+
+        async function vote(speaker) {
+            if (!isActive) {
+                alert('Голосование ещё не началось или завершено');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/vote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        speaker: speaker,
+                        voterId: voterId
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentVote = speaker;
+                    localStorage.setItem('debateCurrentVote', speaker);
+                    showConfirmation(speaker);
+                } else {
+                    alert(data.error || 'Ошибка голосования');
+                }
+            } catch (error) {
+                console.error('Vote error:', error);
+                alert('Ошибка подключения. Попробуйте ещё раз.');
+            }
+        }
+
+        function showConfirmation(speaker) {
+            const confirmationEl = document.getElementById('vote-confirmation');
+            const buttonsEl = document.getElementById('voting-buttons');
+            
+            // Update button styles
+            document.getElementById('vote-a').classList.remove('selected');
+            document.getElementById('vote-b').classList.remove('selected');
+            document.getElementById('vote-' + speaker.toLowerCase()).classList.add('selected');
+            
+            confirmationEl.style.display = 'block';
+            confirmationEl.querySelector('p').textContent = `Вы проголосовали за Спикера ${speaker}`;
+        }
+
+        // Listen for real-time updates
+        socket.on('voteUpdate', (data) => {
+            console.log('Vote update received:', data);
+        });
+
+        // Initialize
+        checkSession();
+        
+        // Poll for session status every 5 seconds
+        setInterval(checkSession, 5000);
+    </script>
+</body>
+</html>

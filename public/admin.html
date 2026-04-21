@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="admin-container">
+        <h1>⚙️ Админ-панель</h1>
+        
+        <div class="admin-section">
+            <h2>Управление дебатами</h2>
+            
+            <div class="debate-settings">
+                <div class="topic-input-group" style="margin-bottom: 20px;">
+                    <label for="debate-topic" class="topic-label">Тема дебатов:</label>
+                    <input 
+                        type="text" 
+                        id="debate-topic" 
+                        class="topic-input" 
+                        placeholder="Введите тему дебатов..."
+                        value=""
+                    >
+                </div>
+                
+                <div class="speaker-names-group" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label for="speaker-a-name" class="topic-label">Имя Спикера A:</label>
+                        <input 
+                            type="text" 
+                            id="speaker-a-name" 
+                            class="topic-input" 
+                            placeholder="Спикер A"
+                            value=""
+                        >
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="speaker-b-name" class="topic-label">Имя Спикера B:</label>
+                        <input 
+                            type="text" 
+                            id="speaker-b-name" 
+                            class="topic-input" 
+                            placeholder="Спикер B"
+                            value=""
+                        >
+                    </div>
+                </div>
+            </div>
+            
+            <div id="session-info" class="session-info" style="display: none;">
+                <div class="info-row">
+                    <span class="info-label">Тема:</span>
+                    <span id="session-topic" class="topic-display">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Спикер A:</span>
+                    <span id="session-speaker-a" class="topic-display">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Спикер B:</span>
+                    <span id="session-speaker-b" class="topic-display">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Статус:</span>
+                    <span id="session-status" class="status-badge">Активны</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ID сессии:</span>
+                    <span id="session-id">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Начало:</span>
+                    <span id="session-start">-</span>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="start-btn" class="btn btn-start" onclick="startDebate()">
+                    🚀 Начать дебаты
+                </button>
+                <button id="end-btn" class="btn btn-end" onclick="endDebate()" disabled>
+                    ⏹ Завершить дебаты
+                </button>
+            </div>
+        </div>
+        
+        <div id="qr-section" class="admin-section" style="display: none;">
+            <h2>QR-код для голосования</h2>
+            <p class="section-desc">Отсканируйте QR-код для доступа к голосованию</p>
+            
+            <div class="qr-container">
+                <img id="qr-code" src="" alt="QR Code" class="qr-image">
+            </div>
+            
+            <div class="voting-url">
+                <span class="url-label">URL для голосования:</span>
+                <a id="voting-link" href="#" target="_blank"></a>
+                <button class="btn-copy" onclick="copyUrl()">📋 Копировать</button>
+            </div>
+        </div>
+        
+        <div class="admin-section">
+            <h2>Текущие результаты</h2>
+            <div id="live-results" class="live-results">
+                <div class="result-row">
+                    <span class="speaker-badge badge-a">🔵 Спикер A</span>
+                    <span id="result-a" class="result-value">50%</span>
+                </div>
+                <div class="result-row">
+                    <span class="speaker-badge badge-b">🔴 Спикер B</span>
+                    <span id="result-b" class="result-value">50%</span>
+                </div>
+                <div class="result-row total">
+                    <span>Всего голосов:</span>
+                    <span id="result-total" class="result-value">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-section">
+            <h2>Навигация</h2>
+            <div class="nav-links">
+                <a href="/" target="_blank" class="nav-link">📱 Страница голосования</a>
+                <a href="/display" target="_blank" class="nav-link">📊 Экран рейтинга</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentSessionId = null;
+        let isActive = false;
+
+        // Listen for vote updates
+        socket.on('voteUpdate', (data) => {
+            updateLiveResults(data);
+        });
+
+        async function startDebate() {
+            try {
+                const topic = document.getElementById('debate-topic').value.trim();
+                const speakerAName = document.getElementById('speaker-a-name').value.trim() || 'Спикер A';
+                const speakerBName = document.getElementById('speaker-b-name').value.trim() || 'Спикер B';
+                
+                const response = await fetch('/api/debate/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        topic: topic || 'Тема не указана',
+                        speakerAName: speakerAName,
+                        speakerBName: speakerBName
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentSessionId = data.sessionId;
+                    isActive = true;
+                    
+                    // Update UI
+                    document.getElementById('session-info').style.display = 'block';
+                    document.getElementById('session-topic').textContent = data.topic;
+                    document.getElementById('session-speaker-a').textContent = data.speakerAName;
+                    document.getElementById('session-speaker-b').textContent = data.speakerBName;
+                    document.getElementById('session-id').textContent = data.sessionId;
+                    document.getElementById('session-start').textContent = new Date().toLocaleTimeString('ru-RU');
+                    document.getElementById('session-status').textContent = 'Активны';
+                    document.getElementById('session-status').className = 'status-badge active';
+                    
+                    document.getElementById('start-btn').disabled = true;
+                    document.getElementById('end-btn').disabled = false;
+                    
+                    // Disable inputs
+                    document.getElementById('debate-topic').disabled = true;
+                    document.getElementById('speaker-a-name').disabled = true;
+                    document.getElementById('speaker-b-name').disabled = true;
+                    
+                    // Generate QR code
+                    await generateQRCode(data.votingUrl);
+                    
+                    document.getElementById('qr-section').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error starting debate:', error);
+                alert('Ошибка при начале дебатов');
+            }
+        }
+
+        async function endDebate() {
+            if (!confirm('Завершить текущие дебаты?')) return;
+            
+            try {
+                const response = await fetch('/api/debate/end', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    isActive = false;
+                    
+                    document.getElementById('session-status').textContent = 'Завершены';
+                    document.getElementById('session-status').className = 'status-badge inactive';
+                    
+                    document.getElementById('start-btn').disabled = false;
+                    document.getElementById('end-btn').disabled = true;
+                    
+                    // Update final results
+                    updateLiveResults(data.results);
+                }
+            } catch (error) {
+                console.error('Error ending debate:', error);
+                alert('Ошибка при завершении дебатов');
+            }
+        }
+
+        async function generateQRCode(url) {
+            try {
+                const response = await fetch('/api/qr?url=' + encodeURIComponent(url));
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('qr-code').src = data.qrCode;
+                    const linkEl = document.getElementById('voting-link');
+                    linkEl.href = url;
+                    linkEl.textContent = url;
+                }
+            } catch (error) {
+                console.error('Error generating QR:', error);
+            }
+        }
+
+        function updateLiveResults(results) {
+            document.getElementById('result-a').textContent = results.A + '%';
+            document.getElementById('result-b').textContent = results.B + '%';
+            document.getElementById('result-total').textContent = results.totalVotes;
+        }
+
+        function copyUrl() {
+            const url = document.getElementById('voting-link').href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URL скопирован в буфер обмена');
+            });
+        }
+
+        // Check current session on load
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/results');
+                const data = await response.json();
+                
+                if (data.active && data.sessionId) {
+                    currentSessionId = data.sessionId;
+                    isActive = true;
+                    
+                    document.getElementById('session-info').style.display = 'block';
+                    document.getElementById('session-topic').textContent = data.topic || 'Тема не указана';
+                    document.getElementById('session-id').textContent = data.sessionId;
+                    document.getElementById('session-status').textContent = 'Активны';
+                    document.getElementById('session-status').className = 'status-badge active';
+                    
+                    document.getElementById('start-btn').disabled = true;
+                    document.getElementById('end-btn').disabled = false;
+                    
+                    // Disable inputs
+                    document.getElementById('debate-topic').disabled = true;
+                    document.getElementById('speaker-a-name').disabled = true;
+                    document.getElementById('speaker-b-name').disabled = true;
+                    
+                    const votingUrl = window.location.origin;
+                    await generateQRCode(votingUrl);
+                    document.getElementById('qr-section').style.display = 'block';
+                }
+                
+                updateLiveResults(data.results);
+            } catch (error) {
+                console.error('Error checking session:', error);
+            }
+        }
+
+        // Initialize
+        checkSession();
+    </script>
+</body>
+</html>

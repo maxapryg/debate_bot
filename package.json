@@ -1,0 +1,29 @@
+{
+  "name": "debate-rating-service",
+  "version": "1.0.0",
+  "description": "Real-time debate rating service with QR code voting",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "keywords": [
+    "debate",
+    "voting",
+    "rating",
+    "real-time"
+  ],
+  "author": "",
+  "license": "MIT"
+}

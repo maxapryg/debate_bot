@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рейтинг спикеров</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="display-container">
+        <h1 class="display-title">Рейтинг спикеров</h1>
+        
+        <div id="debate-topic-display" class="debate-topic" style="display: none;">
+            <span class="topic-icon">💬</span>
+            <span id="debate-topic-text"></span>
+        </div>
+        
+        <div id="session-status" class="session-status">
+            Ожидание начала дебатов...
+        </div>
+        
+        <div class="rating-display">
+            <div class="speaker-rating speaker-a">
+                <div class="speaker-header">
+                    <span class="speaker-icon">🔵</span>
+                    <span class="speaker-name" id="speaker-a-name">Спикер A</span>
+                </div>
+                <div class="percentage" id="percentage-a">50%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill fill-a" id="progress-a" style="width: 50%"></div>
+                </div>
+                <div class="vote-count" id="votes-a">0 голосов</div>
+            </div>
+            
+            <div class="vs-divider">VS</div>
+            
+            <div class="speaker-rating speaker-b">
+                <div class="speaker-header">
+                    <span class="speaker-icon">🔴</span>
+                    <span class="speaker-name" id="speaker-b-name">Спикер B</span>
+                </div>
+                <div class="percentage" id="percentage-b">50%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill fill-b" id="progress-b" style="width: 50%"></div>
+                </div>
+                <div class="vote-count" id="votes-b">0 голосов</div>
+            </div>
+        </div>
+        
+        <div class="total-votes">
+            Всего голосов: <span id="total-votes">0</span>
+        </div>
+        
+        <div id="winner-banner" class="winner-banner" style="display: none;">
+            <span class="winner-icon">🏆</span>
+            <span id="winner-text">Побеждает Спикер A</span>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentResults = { A: 50, B: 50, totalVotes: 0 };
+        let isActive = false;
+
+        // Connect to socket
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        // Listen for vote updates
+        socket.on('voteUpdate', (data) => {
+            updateDisplay(data);
+        });
+
+        // Fetch initial results
+        async function fetchResults() {
+            try {
+                const response = await fetch('/api/results');
+                const data = await response.json();
+                isActive = data.active;
+                updateDisplay(data.results);
+                updateSessionStatus(isActive);
+                if (data.topic) {
+                    updateTopicDisplay(data.topic);
+                }
+                if (data.speakerAName) {
+                    updateSpeakerNames(data.speakerAName, data.speakerBName);
+                }
+            } catch (error) {
+                console.error('Error fetching results:', error);
+            }
+        }
+
+        function updateTopicDisplay(topic) {
+            const topicDisplay = document.getElementById('debate-topic-display');
+            const topicText = document.getElementById('debate-topic-text');
+            
+            if (topic && topic !== 'Тема не указана') {
+                topicText.textContent = topic;
+                topicDisplay.style.display = 'flex';
+            } else {
+                topicDisplay.style.display = 'none';
+            }
+        }
+
+        function updateSpeakerNames(speakerAName, speakerBName) {
+            document.getElementById('speaker-a-name').textContent = speakerAName || 'Спикер A';
+            document.getElementById('speaker-b-name').textContent = speakerBName || 'Спикер B';
+            
+            // Update winner banner text
+            const winnerBanner = document.getElementById('winner-banner');
+            const winnerText = document.getElementById('winner-text');
+            if (winnerBanner.style.display === 'flex') {
+                if (currentResults.A > currentResults.B) {
+                    winnerText.textContent = 'Побеждает ' + (speakerAName || 'Спикер A');
+                    winnerText.style.color = '#3498db';
+                } else {
+                    winnerText.textContent = 'Побеждает ' + (speakerBName || 'Спикер B');
+                    winnerText.style.color = '#e74c3c';
+                }
+            }
+        }
+
+        function updateDisplay(results) {
+            currentResults = results;
+            
+            // Update percentages
+            document.getElementById('percentage-a').textContent = results.A + '%';
+            document.getElementById('percentage-b').textContent = results.B + '%';
+            
+            // Update progress bars
+            document.getElementById('progress-a').style.width = results.A + '%';
+            document.getElementById('progress-b').style.width = results.B + '%';
+            
+            // Calculate actual votes from percentage and total
+            const votesA = Math.round((results.A / 100) * results.totalVotes);
+            const votesB = Math.round((results.B / 100) * results.totalVotes);
+            
+            document.getElementById('votes-a').textContent = votesA + ' голос' + getVoteDeclension(votesA);
+            document.getElementById('votes-b').textContent = votesB + ' голос' + getVoteDeclension(votesB);
+            document.getElementById('total-votes').textContent = results.totalVotes;
+            
+            // Update winner banner
+            updateWinnerBanner(results);
+        }
+
+        function updateWinnerBanner(results) {
+            const banner = document.getElementById('winner-banner');
+            const winnerText = document.getElementById('winner-text');
+            
+            if (results.totalVotes > 0 && results.A !== results.B) {
+                const speakerAName = document.getElementById('speaker-a-name').textContent;
+                const speakerBName = document.getElementById('speaker-b-name').textContent;
+                
+                if (results.A > results.B) {
+                    winnerText.textContent = 'Побеждает ' + speakerAName;
+                    winnerText.style.color = '#3498db';
+                    banner.style.display = 'flex';
+                } else if (results.B > results.A) {
+                    winnerText.textContent = 'Побеждает ' + speakerBName;
+                    winnerText.style.color = '#e74c3c';
+                    banner.style.display = 'flex';
+                } else {
+                    banner.style.display = 'none';
+                }
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        function updateSessionStatus(active) {
+            const statusEl = document.getElementById('session-status');
+            if (active) {
+                statusEl.textContent = '🔴 Дебаты идут. Голосование активно!';
+                statusEl.className = 'session-status active';
+            } else {
+                statusEl.textContent = '⏸ Дебаты не активны';
+                statusEl.className = 'session-status inactive';
+            }
+            isActive = active;
+        }
+
+        function getVoteDeclension(number) {
+            const lastDigit = number % 10;
+            const lastTwoDigits = number % 100;
+            
+            if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+                return 'ов';
+            }
+            if (lastDigit === 1) {
+                return '';
+            }
+            if (lastDigit >= 2 && lastDigit <= 4) {
+                return 'а';
+            }
+            return 'ов';
+        }
+
+        // Poll for session status every 5 seconds
+        setInterval(() => {
+            fetch('/api/results')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.active !== isActive) {
+                        isActive = data.active;
+                        updateSessionStatus(isActive);
+                    }
+                });
+        }, 5000);
+
+        // Initialize
+        fetchResults();
+    </script>
+</body>
+</html>
