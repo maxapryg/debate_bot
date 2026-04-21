@@ -135,5 +135,109 @@ describe('Utility Functions', () => {
                 expect(results.A + results.B).toBe(100);
             });
         });
+        
+        test('should handle very small numbers', () => {
+            const session = { votes: { A: 1, B: 1 } };
+            const results = calculateResults(session);
+
+            expect(results.A).toBe(50);
+            expect(results.B).toBe(50);
+            expect(results.totalVotes).toBe(2);
+        });
+        
+        test('should handle extreme ratio', () => {
+            const session = { votes: { A: 1, B: 999 } };
+            const results = calculateResults(session);
+
+            expect(results.A).toBe(0);
+            expect(results.B).toBe(100);
+            expect(results.totalVotes).toBe(1000);
+        });
+    });
+    
+    describe('Session Management', () => {
+        let sessions;
+        let currentSessionId;
+        
+        beforeEach(() => {
+            sessions = new Map();
+            currentSessionId = null;
+        });
+        
+        function createSession(topic = 'Test', speakerAName = 'A', speakerBName = 'B') {
+            const sessionId = 'debate_' + Date.now();
+            const session = {
+                id: sessionId,
+                topic: topic,
+                speakerAName: speakerAName,
+                speakerBName: speakerBName,
+                startTime: new Date(),
+                votes: { A: 0, B: 0 },
+                voterVotes: new Map(),
+                isActive: true
+            };
+            sessions.set(sessionId, session);
+            currentSessionId = sessionId;
+            return session;
+        }
+        
+        function getCurrentSession() {
+            if (!currentSessionId) return null;
+            return sessions.get(currentSessionId);
+        }
+        
+        test('should create session with correct structure', () => {
+            const session = createSession('My Topic', 'John', 'Jane');
+            
+            expect(session.id).toMatch(/^debate_\d+$/);
+            expect(session.topic).toBe('My Topic');
+            expect(session.speakerAName).toBe('John');
+            expect(session.speakerBName).toBe('Jane');
+            expect(session.isActive).toBe(true);
+            expect(session.votes).toEqual({ A: 0, B: 0 });
+            expect(session.voterVotes).toBeInstanceOf(Map);
+        });
+        
+        test('should get current session', () => {
+            const created = createSession();
+            const current = getCurrentSession();
+            
+            expect(current).toEqual(created);
+        });
+        
+        test('should return null when no current session', () => {
+            currentSessionId = null;
+            expect(getCurrentSession()).toBeNull();
+        });
+        
+        test('should track voter votes', () => {
+            const session = createSession();
+            
+            session.voterVotes.set('voter_1', 'A');
+            session.voterVotes.set('voter_2', 'B');
+            
+            expect(session.voterVotes.size).toBe(2);
+            expect(session.voterVotes.get('voter_1')).toBe('A');
+            expect(session.voterVotes.get('voter_2')).toBe('B');
+        });
+        
+        test('should update vote counts correctly', () => {
+            const session = createSession();
+            
+            session.votes.A = 5;
+            session.votes.B = 3;
+            
+            expect(session.votes.A).toBe(5);
+            expect(session.votes.B).toBe(3);
+        });
+        
+        test('should handle session end', () => {
+            const session = createSession();
+            session.isActive = false;
+            session.endTime = new Date();
+            
+            expect(session.isActive).toBe(false);
+            expect(session.endTime).toBeInstanceOf(Date);
+        });
     });
 });

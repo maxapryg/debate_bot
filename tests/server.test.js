@@ -403,6 +403,40 @@ describe('Debate Rating API', () => {
             expect(response.body.voterId).toBeDefined();
             expect(response.body.voterId).toMatch(/^voter_\w+$/);
         });
+        
+        test('should reject vote for inactive session', async () => {
+            await testServer.post('/api/debate/start').expect(200);
+            await testServer.post('/api/debate/end').expect(200);
+            
+            const response = await testServer
+                .post('/api/vote')
+                .send({ speaker: 'A', voterId: 'voter_123' })
+                .expect(400);
+            
+            expect(response.body.error).toBe('No active debate session');
+        });
+        
+        test('should handle empty speaker parameter', async () => {
+            await testServer.post('/api/debate/start').expect(200);
+            
+            const response = await testServer
+                .post('/api/vote')
+                .send({ speaker: '', voterId: 'voter_123' })
+                .expect(400);
+            
+            expect(response.body.error).toBe('Invalid speaker. Must be A or B');
+        });
+        
+        test('should handle missing speaker parameter', async () => {
+            await testServer.post('/api/debate/start').expect(200);
+            
+            const response = await testServer
+                .post('/api/vote')
+                .send({ voterId: 'voter_123' })
+                .expect(400);
+            
+            expect(response.body.error).toBe('Invalid speaker. Must be A or B');
+        });
     });
     
     describe('Calculate Results', () => {
