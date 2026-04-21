@@ -172,18 +172,22 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 15px 30px;
-    background: rgba(253, 177, 36, 0.1);
-    border: 1px solid rgba(253, 177, 36, 0.3);
-    border-radius: 16px;
-    margin-bottom: 20px;
-    font-size: 20px;
+    gap: 16px;
+    padding: 25px 50px;
+    background: linear-gradient(135deg, rgba(253, 177, 36, 0.15), rgba(255, 221, 45, 0.15));
+    border: 2px solid var(--color-primary);
+    border-radius: 20px;
+    margin-bottom: 30px;
+    font-size: 32px;
+    font-weight: 700;
     color: var(--color-primary);
+    box-shadow: 0 0 30px rgba(253, 177, 36, 0.3), inset 0 0 20px rgba(253, 177, 36, 0.1);
+    text-shadow: 0 0 10px rgba(253, 177, 36, 0.5);
 }
 
 .topic-icon {
-    font-size: 28px;
+    font-size: 42px;
+    filter: drop-shadow(0 0 8px rgba(253, 177, 36, 0.6));
 }
 
 .session-status {
