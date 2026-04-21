@@ -112,10 +112,8 @@
             if (winnerBanner.style.display === 'flex') {
                 if (currentResults.A > currentResults.B) {
                     winnerText.textContent = 'Побеждает ' + (speakerAName || 'Спикер A');
-                    winnerText.style.color = '#3498db';
                 } else {
                     winnerText.textContent = 'Побеждает ' + (speakerBName || 'Спикер B');
-                    winnerText.style.color = '#e74c3c';
                 }
             }
         }
@@ -153,11 +151,9 @@
                 
                 if (results.A > results.B) {
                     winnerText.textContent = 'Побеждает ' + speakerAName;
-                    winnerText.style.color = '#3498db';
                     banner.style.display = 'flex';
                 } else if (results.B > results.A) {
                     winnerText.textContent = 'Побеждает ' + speakerBName;
-                    winnerText.style.color = '#e74c3c';
                     banner.style.display = 'flex';
                 } else {
                     banner.style.display = 'none';
