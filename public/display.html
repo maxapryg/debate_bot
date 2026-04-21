@@ -165,10 +165,10 @@
         function updateSessionStatus(active) {
             const statusEl = document.getElementById('session-status');
             if (active) {
-                statusEl.textContent = '🔴 Дебаты идут. Голосование активно!';
+                statusEl.textContent = 'Дебаты идут. Голосование активно!';
                 statusEl.className = 'session-status active';
             } else {
-                statusEl.textContent = '⏸ Дебаты не активны';
+                statusEl.textContent = 'Дебаты не активны';
                 statusEl.className = 'session-status inactive';
             }
             isActive = active;
