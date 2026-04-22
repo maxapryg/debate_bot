@@ -321,6 +321,8 @@ body {
     background: linear-gradient(135deg, rgba(115, 176, 119, 0.2), rgba(115, 176, 119, 0.1));
     border: 2px solid var(--color-green);
     border-radius: 16px;
+    margin: 0 auto;
+    max-width: 800px;
     animation: glow-green 2s infinite;
 }
 
