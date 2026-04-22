@@ -52,6 +52,13 @@
             <span class="winner-icon">🏆</span>
             <span id="winner-text">Побеждает Спикер A</span>
         </div>
+        
+        <div id="qr-section" class="qr-section" style="display: none;">
+            <div class="qr-container-display">
+                <img id="qr-code-display" src="" alt="QR Code" class="qr-image-display">
+                <p class="qr-label">📱 Отсканируйте для голосования</p>
+            </div>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -205,6 +212,41 @@
 
         // Initialize
         fetchResults();
+
+        // Generate QR code for voting
+        async function generateQRCode() {
+            try {
+                const votingUrl = window.location.origin;
+                const response = await fetch('/api/qr?url=' + encodeURIComponent(votingUrl));
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('qr-code-display').src = data.qrCode;
+                    document.getElementById('qr-section').style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Error generating QR:', error);
+            }
+        }
+
+        // Check and show QR code when debate starts
+        function checkAndShowQR() {
+            fetch('/api/results')
+                .then(r => r.json())
+                .then(data => {
+                    const qrSection = document.getElementById('qr-section');
+                    if (data.active && qrSection.style.display === 'none') {
+                        generateQRCode();
+                    } else if (!data.active && qrSection.style.display === 'flex') {
+                        qrSection.style.display = 'none';
+                    }
+                })
+                .catch(error => console.error('Error checking QR:', error));
+        }
+
+        // Check QR status on load and every 5 seconds
+        checkAndShowQR();
+        setInterval(checkAndShowQR, 5000);
     </script>
 </body>
 </html>
