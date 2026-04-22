@@ -259,6 +259,8 @@
                     
                     document.getElementById('session-info').style.display = 'block';
                     document.getElementById('session-topic').textContent = data.topic || 'Тема не указана';
+                    document.getElementById('session-speaker-a').textContent = data.speakerAName || 'Спикер A';
+                    document.getElementById('session-speaker-b').textContent = data.speakerBName || 'Спикер B';
                     document.getElementById('session-id').textContent = data.sessionId;
                     document.getElementById('session-status').textContent = 'Активны';
                     document.getElementById('session-status').className = 'status-badge active';

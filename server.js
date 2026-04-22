@@ -140,6 +140,9 @@ app.get('/api/results', (req, res) => {
     if (!session) {
         return res.json({
             active: false,
+            topic: null,
+            speakerAName: null,
+            speakerBName: null,
             results: { A: 50, B: 50, totalVotes: 0 }
         });
     }

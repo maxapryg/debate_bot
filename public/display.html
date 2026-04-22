@@ -81,7 +81,8 @@
                 if (data.topic) {
                     updateTopicDisplay(data.topic);
                 }
-                if (data.speakerAName) {
+                // Always update speaker names if available (even if default)
+                if (data.speakerAName || data.speakerBName) {
                     updateSpeakerNames(data.speakerAName, data.speakerBName);
                 }
             } catch (error) {
