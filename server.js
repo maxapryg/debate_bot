@@ -139,17 +139,15 @@ app.post('/api/vote', (req, res) => {
     // Get client IP
     const ip = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
     
-    // Check rate limiting
-    if (!checkRateLimit(ip)) {
-        return res.status(429).json({ error: 'Too many votes. Please wait a minute.' });
-    }
-    
-    // Generate voter ID from fingerprint if available, otherwise use voterId
+    // Use voterId from localStorage as primary identifier (stable across reloads)
+    // Fingerprint is only used as fallback for incognito mode
     let id;
-    if (fingerprint) {
-        id = generateFingerprintId(fingerprint, ip);
-    } else if (voterId) {
+    if (voterId && voterId.startsWith('voter_')) {
+        // Use stable localStorage voterId
         id = voterId;
+    } else if (fingerprint) {
+        // Fallback to fingerprint for incognito mode
+        id = generateFingerprintId(fingerprint, ip);
     } else {
         id = generateVoterId();
     }
@@ -158,7 +156,7 @@ app.post('/api/vote', (req, res) => {
     const previousVote = session.voterVotes.get(id);
     
     if (previousVote) {
-        // Remove previous vote
+        // Remove previous vote (changing vote, not adding new one)
         session.votes[previousVote]--;
     }
     

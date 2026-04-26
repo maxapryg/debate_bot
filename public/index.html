@@ -98,7 +98,7 @@
             currentVote = sessionData.vote;
         }
 
-        // Initialize voter ID
+        // Initialize voter ID - this is stable across reloads
         if (!voterId) {
             voterId = 'voter_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('debateVoterId', voterId);
@@ -114,11 +114,11 @@
                 console.log('Fingerprint initialized:', fingerprint);
             } catch (error) {
                 console.error('FingerprintJS error:', error);
-                isFingerprintReady = true; // Allow voting even if fingerprint fails
+                isFingerprintReady = true;
             }
         }
 
-        // Start fingerprint initialization and wait for it
+        // Start fingerprint initialization
         initFingerprint();
 
         let isLoaded = false;
@@ -213,12 +213,6 @@
                 alert('Голосование ещё не началось или завершено');
                 return;
             }
-            
-            // Wait for fingerprint to be ready
-            if (!isFingerprintReady) {
-                alert('Пожалуйста, подождите загрузки системы...');
-                return;
-            }
 
             try {
                 const requestBody = {
@@ -226,8 +220,8 @@
                     voterId: voterId
                 };
 
-                // Always add fingerprint if ready (for incognito protection)
-                if (isFingerprintReady && fingerprint) {
+                // Add fingerprint if available
+                if (fingerprint) {
                     requestBody.fingerprint = fingerprint;
                 }
 
