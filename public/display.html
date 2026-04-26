@@ -5,60 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дебаты</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="display-container">
-        <div id="debate-topic-display" class="debate-topic" style="display: none;">
-            <span id="debate-topic-text"></span>
-        </div>
-        
-        <div id="session-status" class="session-status">
-            Ожидание начала дебатов...
-        </div>
-        
-        <div class="rating-display">
-            <div class="speaker-rating speaker-a">
-                <div class="speaker-header">
-                    <span class="speaker-icon">🟠</span>
-                    <span class="speaker-name" id="speaker-a-name">Спикер A</span>
+        <!-- Decorative Background Elements -->
+        <div class="bg-gradient-wave"></div>
+        <div class="bg-abstract-lines"></div>
+
+        <!-- Header -->
+        <header class="display-header">
+            <div class="logo-wrapper">
+                <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 3.33333L23.3333 6.66667V15L20 18.3333L16.6667 15V6.66667L20 3.33333Z" fill="url(#logo-gradient)"/>
+                    <path d="M10 10L13.3333 13.3333V21.6667L10 25L6.66667 21.6667V13.3333L10 10Z" fill="url(#logo-gradient)"/>
+                    <path d="M30 10L33.3333 13.3333V21.6667L30 25L26.6667 21.6667V13.3333L30 10Z" fill="url(#logo-gradient)"/>
+                    <path d="M20 21.6667L23.3333 25V33.3333L20 36.6667L16.6667 33.3333V25L20 21.6667Z" fill="url(#logo-gradient)"/>
+                    <defs>
+                        <linearGradient id="logo-gradient" x1="6.66667" y1="3.33333" x2="33.3333" y2="36.6667" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FFD84D"/>
+                            <stop offset="1" stop-color="#FF7A00"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="status-pill" id="session-status">
+                Дебаты идут. Голосование активно!
+            </div>
+        </header>
+
+        <!-- Top Section: Topic + QR -->
+        <div class="top-section">
+            <div class="topic-card" id="debate-topic-display" style="display: none;">
+                <span class="topic-label">ТЕМА ДЕБАТОВ</span>
+                <h1 class="topic-title" id="debate-topic-text"></h1>
+            </div>
+            
+            <div class="qr-card" id="qr-section" style="display: none;">
+                <p class="qr-card-text">Сканируй QR-код и голосуй</p>
+                <div class="qr-wrapper">
+                    <img id="qr-code-display" src="" alt="QR Code" class="qr-image-display">
                 </div>
-                <div class="percentage" id="percentage-a">50%</div>
-                <div class="progress-bar">
+            </div>
+        </div>
+
+        <!-- Main Voting Card -->
+        <main class="voting-card">
+            <div class="speaker-block speaker-a-block">
+                <h2 class="speaker-name" id="speaker-a-name">Спикер A</h2>
+                <div class="percentage percentage-a" id="percentage-a">50%</div>
+                <div class="progress-bar progress-a">
                     <div class="progress-fill fill-a" id="progress-a" style="width: 50%"></div>
                 </div>
-                <div class="vote-count" id="votes-a">0 голосов</div>
-            </div>
-            
-            <div class="vs-divider">VS</div>
-            
-            <div class="speaker-rating speaker-b">
-                <div class="speaker-header">
-                    <span class="speaker-icon">🔴</span>
-                    <span class="speaker-name" id="speaker-b-name">Спикер B</span>
+                <div class="votes-info">
+                    <svg class="user-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM3 16a7 7 0 1114 0H3z"/>
+                    </svg>
+                    <span id="votes-a">0 голосов</span>
                 </div>
-                <div class="percentage" id="percentage-b">50%</div>
-                <div class="progress-bar">
+            </div>
+
+            <div class="vs-circle">
+                <span class="vs-text">VS</span>
+            </div>
+
+            <div class="speaker-block speaker-b-block">
+                <h2 class="speaker-name" id="speaker-b-name">Спикер B</h2>
+                <div class="percentage percentage-b" id="percentage-b">50%</div>
+                <div class="progress-bar progress-b">
                     <div class="progress-fill fill-b" id="progress-b" style="width: 50%"></div>
                 </div>
-                <div class="vote-count" id="votes-b">0 голосов</div>
+                <div class="votes-info">
+                    <svg class="user-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM3 16a7 7 0 1114 0H3z"/>
+                    </svg>
+                    <span id="votes-b">0 голосов</span>
+                </div>
             </div>
-        </div>
-        
-        <div class="total-votes">
-            Всего голосов: <span id="total-votes">0</span>
-        </div>
-        
-        <div id="winner-banner" class="winner-banner" style="display: none;">
-            <span class="winner-icon">🏆</span>
-            <span id="winner-text">Побеждает Спикер A</span>
-        </div>
-        
-        <div id="qr-section" class="qr-section" style="display: none;">
-            <div class="qr-container-display">
-                <img id="qr-code-display" src="" alt="QR Code" class="qr-image-display">
-                <p class="qr-label">📱 Отсканируйте для голосования</p>
+        </main>
+
+        <!-- Footer -->
+        <footer class="display-footer">
+            <div class="participants-pill">
+                <span class="participants-label">Всего участников:</span>
+                <span class="participants-count" id="total-votes">0</span>
             </div>
-        </div>
+        </footer>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -88,7 +122,6 @@
                 if (data.topic) {
                     updateTopicDisplay(data.topic);
                 }
-                // Always update speaker names if available (even if default)
                 if (data.speakerAName || data.speakerBName) {
                     updateSpeakerNames(data.speakerAName, data.speakerBName);
                 }
@@ -103,7 +136,7 @@
             
             if (topic && topic !== 'Тема не указана') {
                 topicText.textContent = topic;
-                topicDisplay.style.display = 'flex';
+                topicDisplay.style.display = 'block';
             } else {
                 topicDisplay.style.display = 'none';
             }
@@ -112,72 +145,33 @@
         function updateSpeakerNames(speakerAName, speakerBName) {
             document.getElementById('speaker-a-name').textContent = speakerAName || 'Спикер A';
             document.getElementById('speaker-b-name').textContent = speakerBName || 'Спикер B';
-            
-            // Update winner banner text
-            const winnerBanner = document.getElementById('winner-banner');
-            const winnerText = document.getElementById('winner-text');
-            if (winnerBanner.style.display === 'flex') {
-                if (currentResults.A > currentResults.B) {
-                    winnerText.textContent = 'Побеждает ' + (speakerAName || 'Спикер A');
-                } else {
-                    winnerText.textContent = 'Побеждает ' + (speakerBName || 'Спикер B');
-                }
-            }
         }
 
         function updateDisplay(results) {
             currentResults = results;
             
-            // Update percentages
             document.getElementById('percentage-a').textContent = results.A + '%';
             document.getElementById('percentage-b').textContent = results.B + '%';
             
-            // Update progress bars
             document.getElementById('progress-a').style.width = results.A + '%';
             document.getElementById('progress-b').style.width = results.B + '%';
             
-            // Calculate actual votes from percentage and total
             const votesA = Math.round((results.A / 100) * results.totalVotes);
             const votesB = Math.round((results.B / 100) * results.totalVotes);
             
             document.getElementById('votes-a').textContent = votesA + ' голос' + getVoteDeclension(votesA);
             document.getElementById('votes-b').textContent = votesB + ' голос' + getVoteDeclension(votesB);
             document.getElementById('total-votes').textContent = results.totalVotes;
-            
-            // Update winner banner
-            updateWinnerBanner(results);
-        }
-
-        function updateWinnerBanner(results) {
-            const banner = document.getElementById('winner-banner');
-            const winnerText = document.getElementById('winner-text');
-            
-            if (results.totalVotes > 0 && results.A !== results.B) {
-                const speakerAName = document.getElementById('speaker-a-name').textContent;
-                const speakerBName = document.getElementById('speaker-b-name').textContent;
-                
-                if (results.A > results.B) {
-                    winnerText.textContent = 'Побеждает ' + speakerAName;
-                    banner.style.display = 'flex';
-                } else if (results.B > results.A) {
-                    winnerText.textContent = 'Побеждает ' + speakerBName;
-                    banner.style.display = 'flex';
-                } else {
-                    banner.style.display = 'none';
-                }
-            } else {
-                banner.style.display = 'none';
-            }
         }
 
         function updateSessionStatus(active) {
             const statusEl = document.getElementById('session-status');
             if (active) {
                 statusEl.textContent = 'Дебаты идут. Голосование активно!';
-                statusEl.className = 'session-status active';
+                statusEl.className = 'status-pill active';
             } else {
                 statusEl.textContent = 'Дебаты не активны';
-                statusEl.className = 'session-status inactive';
+                statusEl.className = 'status-pill inactive';
             }
             isActive = active;
         }
@@ -198,7 +192,6 @@
             return 'ов';
         }
 
-        // Poll for session status every 5 seconds
         setInterval(() => {
             fetch('/api/results')
                 .then(r => r.json())
@@ -210,10 +203,8 @@
                 });
         }, 5000);
 
-        // Initialize
         fetchResults();
 
-        // Generate QR code for voting
         async function generateQRCode() {
             try {
                 const votingUrl = window.location.origin;
@@ -229,7 +220,6 @@
             }
         }
 
-        // Check and show QR code when debate starts
         function checkAndShowQR() {
             fetch('/api/results')
                 .then(r => r.json())
@@ -244,7 +234,6 @@
                 .catch(error => console.error('Error checking QR:', error));
         }
 
-        // Check QR status on load and every 5 seconds
         checkAndShowQR();
         setInterval(checkAndShowQR, 5000);
     </script>

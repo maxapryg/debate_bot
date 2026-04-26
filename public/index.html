@@ -5,32 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Голосование за спикера</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="voting-container">
-        <h1>За кого вы голосуете?</h1>
-        
-        <div id="session-status" class="status-message">
-            Загрузка...
-        </div>
-        
-        <div id="voting-buttons" class="speaker-buttons">
-            <button id="vote-a" class="speaker-btn btn-a" onclick="vote('A')">
-                <span class="speaker-label" id="speaker-a-label">Спикер A</span>
-                <span class="speaker-icon">🟠</span>
-            </button>
+        <!-- Decorative Background Elements -->
+        <div class="bg-gradient-wave"></div>
+        <div class="bg-abstract-lines"></div>
+
+        <!-- Header -->
+        <header class="voting-header">
+            <div class="logo-wrapper">
+                <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 3.33333L23.3333 6.66667V15L20 18.3333L16.6667 15V6.66667L20 3.33333Z" fill="url(#logo-gradient)"/>
+                    <path d="M10 10L13.3333 13.3333V21.6667L10 25L6.66667 21.6667V13.3333L10 10Z" fill="url(#logo-gradient)"/>
+                    <path d="M30 10L33.3333 13.3333V21.6667L30 25L26.6667 21.6667V13.3333L30 10Z" fill="url(#logo-gradient)"/>
+                    <path d="M20 21.6667L23.3333 25V33.3333L20 36.6667L16.6667 33.3333V25L20 21.6667Z" fill="url(#logo-gradient)"/>
+                    <defs>
+                        <linearGradient id="logo-gradient" x1="6.66667" y1="3.33333" x2="33.3333" y2="36.6667" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FFD84D"/>
+                            <stop offset="1" stop-color="#FF7A00"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="status-pill" id="session-status">
+                Загрузка...
+            </div>
+        </header>
+
+        <!-- Main Voting Card -->
+        <main class="voting-card-main">
+            <h1 class="voting-title">За кого вы голосуете?</h1>
             
-            <button id="vote-b" class="speaker-btn btn-b" onclick="vote('B')">
-                <span class="speaker-label" id="speaker-b-label">Спикер B</span>
-                <span class="speaker-icon">🔴</span>
-            </button>
-        </div>
-        
-        <div id="vote-confirmation" class="confirmation-message" style="display: none;">
-            <span class="check-icon">✓</span>
-            <p>Ваш голос принят!</p>
-            <p class="small-text">Вы можете изменить свой голос в любой момент</p>
-        </div>
+            <div id="voting-buttons" class="speaker-buttons">
+                <button id="vote-a" class="speaker-card btn-a" onclick="vote('A')">
+                    <div class="speaker-card-content">
+                        <div class="speaker-badge-card badge-a-card">
+                            <span class="badge-letter">A</span>
+                        </div>
+                        <span class="speaker-label" id="speaker-a-label">Спикер A</span>
+                    </div>
+                </button>
+                
+                <button id="vote-b" class="speaker-card btn-b" onclick="vote('B')">
+                    <div class="speaker-card-content">
+                        <div class="speaker-badge-card badge-b-card">
+                            <span class="badge-letter">B</span>
+                        </div>
+                        <span class="speaker-label" id="speaker-b-label">Спикер B</span>
+                    </div>
+                </button>
+            </div>
+            
+            <div id="vote-confirmation" class="confirmation-card" style="display: none;">
+                <div class="check-circle">
+                    <span class="check-icon">✓</span>
+                </div>
+                <p class="confirmation-text">Ваш голос принят!</p>
+                <p class="confirmation-subtext">Вы можете изменить свой голос в любой момент</p>
+            </div>
+        </main>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -39,6 +76,7 @@
         let voterId = localStorage.getItem('debateVoterId');
         let currentVote = localStorage.getItem('debateCurrentVote');
         let isActive = false;
+        let wasActive = false;
 
         // Initialize voter ID
         if (!voterId) {
@@ -51,6 +89,15 @@
             try {
                 const response = await fetch('/api/results');
                 const data = await response.json();
+                
+                // If session was inactive and now active, reset vote
+                if (!wasActive && data.active) {
+                    currentVote = null;
+                    localStorage.removeItem('debateCurrentVote');
+                    hideConfirmation();
+                }
+                
+                wasActive = data.active;
                 isActive = data.active;
                 updateUI();
                 
@@ -64,15 +111,21 @@
             }
         }
 
+        function hideConfirmation() {
+            document.getElementById('vote-confirmation').style.display = 'none';
+            document.getElementById('vote-a').classList.remove('selected');
+            document.getElementById('vote-b').classList.remove('selected');
+        }
+
         function updateSpeakerNames(speakerAName, speakerBName) {
             document.getElementById('speaker-a-label').textContent = speakerAName || 'Спикер A';
             document.getElementById('speaker-b-label').textContent = speakerBName || 'Спикер B';
             
-            // Update confirmation message
-            if (currentVote) {
+            // Update confirmation message only if user has actually voted
+            if (currentVote === 'A' || currentVote === 'B') {
                 const confirmationEl = document.getElementById('vote-confirmation');
                 const speakerName = currentVote === 'A' ? speakerAName : speakerBName;
-                confirmationEl.querySelector('p').textContent = `Вы проголосовали за ${speakerName || 'Спикера ' + currentVote}`;
+                confirmationEl.querySelector('.confirmation-text').textContent = `Вы проголосовали за ${speakerName || 'Спикера ' + currentVote}`;
             }
         }
 
@@ -82,17 +135,17 @@
             
             if (!isActive) {
                 statusEl.textContent = 'Голосование ещё не началось или завершено';
-                statusEl.className = 'status-message status-inactive';
+                statusEl.className = 'status-pill inactive';
                 buttonsEl.style.pointerEvents = 'none';
                 buttonsEl.style.opacity = '0.5';
             } else {
                 statusEl.textContent = 'Голосование активно!';
-                statusEl.className = 'status-message status-active';
+                statusEl.className = 'status-pill active';
                 buttonsEl.style.pointerEvents = 'auto';
                 buttonsEl.style.opacity = '1';
                 
-                // Show current vote if exists
-                if (currentVote) {
+                // Show current vote only if user has actually voted (A or B)
+                if (currentVote === 'A' || currentVote === 'B') {
                     showConfirmation(currentVote);
                 }
             }
@@ -140,14 +193,14 @@
             document.getElementById('vote-b').classList.remove('selected');
             document.getElementById('vote-' + speaker.toLowerCase()).classList.add('selected');
             
-            confirmationEl.style.display = 'block';
+            confirmationEl.style.display = 'flex';
             
             // Get current speaker name
             const speakerAName = document.getElementById('speaker-a-label').textContent;
             const speakerBName = document.getElementById('speaker-b-label').textContent;
             const speakerName = speaker === 'A' ? speakerAName : speakerBName;
             
-            confirmationEl.querySelector('p').textContent = `Вы проголосовали за ${speakerName}`;
+            confirmationEl.querySelector('.confirmation-text').textContent = `Вы проголосовали за ${speakerName}`;
         }
 
         // Listen for real-time updates
