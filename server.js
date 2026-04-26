@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const QRCode = require('qrcode');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +18,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // In-memory storage for debate sessions
 const debateSessions = new Map();
 let currentSessionId = null;
+
+// Rate limiting storage: Map<IP, {count, resetTime}>
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX = 10; // max 10 votes per minute per IP
 
 // Generate unique voter ID
 function generateVoterId() {
@@ -93,9 +99,33 @@ app.post('/api/debate/end', (req, res) => {
     });
 });
 
+// Rate limiting middleware
+function checkRateLimit(ip) {
+    const now = Date.now();
+    const record = rateLimitStore.get(ip);
+    
+    if (!record || now > record.resetTime) {
+        rateLimitStore.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+        return true;
+    }
+    
+    if (record.count >= RATE_LIMIT_MAX) {
+        return false;
+    }
+    
+    record.count++;
+    return true;
+}
+
+// Generate unique voter ID from fingerprint
+function generateFingerprintId(fingerprint, ip) {
+    const data = `${fingerprint}-${ip}-${process.env.FINGERPRINT_SECRET || 'default-secret'}`;
+    return 'fp_' + crypto.createHash('sha256').update(data).digest('hex').substring(0, 32);
+}
+
 // Submit vote
 app.post('/api/vote', (req, res) => {
-    const { speaker, voterId } = req.body;
+    const { speaker, voterId, fingerprint } = req.body;
     
     if (!speaker || !['A', 'B'].includes(speaker)) {
         return res.status(400).json({ error: 'Invalid speaker. Must be A or B' });
@@ -106,8 +136,23 @@ app.post('/api/vote', (req, res) => {
         return res.status(400).json({ error: 'No active debate session' });
     }
     
-    // Generate voter ID if not provided
-    const id = voterId || generateVoterId();
+    // Get client IP
+    const ip = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
+    
+    // Check rate limiting
+    if (!checkRateLimit(ip)) {
+        return res.status(429).json({ error: 'Too many votes. Please wait a minute.' });
+    }
+    
+    // Generate voter ID from fingerprint if available, otherwise use voterId
+    let id;
+    if (fingerprint) {
+        id = generateFingerprintId(fingerprint, ip);
+    } else if (voterId) {
+        id = voterId;
+    } else {
+        id = generateVoterId();
+    }
     
     // Check if voter already voted
     const previousVote = session.voterVotes.get(id);

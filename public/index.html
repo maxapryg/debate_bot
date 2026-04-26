@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@5/dist/fp.min.js"></script>
 </head>
 <body>
     <div class="voting-container">
@@ -77,12 +78,28 @@
         let currentVote = localStorage.getItem('debateCurrentVote');
         let isActive = false;
         let wasActive = false;
+        let fingerprint = null;
 
         // Initialize voter ID
         if (!voterId) {
             voterId = 'voter_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('debateVoterId', voterId);
         }
+
+        // Initialize FingerprintJS
+        async function initFingerprint() {
+            try {
+                const fp = await FingerprintJS.load();
+                const result = await fp.get();
+                fingerprint = result.visitorId;
+                console.log('Fingerprint initialized:', fingerprint);
+            } catch (error) {
+                console.error('FingerprintJS error:', error);
+            }
+        }
+
+        // Start fingerprint initialization
+        initFingerprint();
 
         // Check session status on load
         async function checkSession() {
@@ -158,15 +175,22 @@
             }
 
             try {
+                const requestBody = {
+                    speaker: speaker,
+                    voterId: voterId
+                };
+
+                // Add fingerprint if available (for incognito protection)
+                if (fingerprint) {
+                    requestBody.fingerprint = fingerprint;
+                }
+
                 const response = await fetch('/api/vote', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        speaker: speaker,
-                        voterId: voterId
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
@@ -175,6 +199,8 @@
                     currentVote = speaker;
                     localStorage.setItem('debateCurrentVote', speaker);
                     showConfirmation(speaker);
+                } else if (response.status === 429) {
+                    alert('Слишком много голосов. Подождите минуту.');
                 } else {
                     alert(data.error || 'Ошибка голосования');
                 }
