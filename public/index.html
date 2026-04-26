@@ -41,7 +41,14 @@
         <main class="voting-card-main">
             <h1 class="voting-title">За кого вы голосуете?</h1>
             
-            <div id="voting-buttons" class="speaker-buttons">
+            <!-- Loading State -->
+            <div id="loading-spinner" class="loading-spinner">
+                <div class="spinner"></div>
+                <p class="loading-text">Загрузка данных...</p>
+            </div>
+            
+            <!-- Voting Buttons (hidden until loaded) -->
+            <div id="voting-buttons" class="speaker-buttons" style="display: none;">
                 <button id="vote-a" class="speaker-card btn-a" onclick="vote('A')">
                     <div class="speaker-card-content">
                         <div class="speaker-badge-card badge-a-card">
@@ -76,6 +83,7 @@
         const socket = io();
         let voterId = localStorage.getItem('debateVoterId');
         let currentVote = localStorage.getItem('debateCurrentVote');
+        let previousSessionId = localStorage.getItem('debateSessionId');
         let isActive = false;
         let wasActive = false;
         let fingerprint = null;
@@ -101,8 +109,7 @@
         // Start fingerprint initialization
         initFingerprint();
 
-        // Track previous session ID to detect new sessions
-        let previousSessionId = null;
+        let isLoaded = false;
         
         // Check session status on load
         async function checkSession() {
@@ -111,29 +118,45 @@
                 const data = await response.json();
                 
                 // Reset vote only when a NEW session starts (different session ID)
-                if (data.active && data.sessionId && data.sessionId !== previousSessionId) {
-                    // New session detected - reset vote
+                if (data.active && data.sessionId) {
+                    if (previousSessionId && data.sessionId !== previousSessionId) {
+                        // New session detected - reset vote
+                        currentVote = null;
+                        localStorage.removeItem('debateCurrentVote');
+                        hideConfirmation();
+                    }
+                    // Save current session ID
                     previousSessionId = data.sessionId;
-                    currentVote = null;
-                    localStorage.removeItem('debateCurrentVote');
-                    hideConfirmation();
+                    localStorage.setItem('debateSessionId', previousSessionId);
                 } else if (!data.active) {
-                    // Session is inactive
+                    // Session is inactive - clear session ID
                     previousSessionId = null;
+                    localStorage.removeItem('debateSessionId');
                 }
                 
                 wasActive = data.active;
                 isActive = data.active;
-                updateUI();
                 
                 // Update speaker names if available
-                if (data.speakerAName) {
+                if (data.speakerAName && !isLoaded) {
                     updateSpeakerNames(data.speakerAName, data.speakerBName);
+                    // Hide loader and show voting buttons
+                    hideLoader();
+                    isLoaded = true;
                 }
+                
+                updateUI();
             } catch (error) {
                 console.error('Error checking session:', error);
                 document.getElementById('session-status').textContent = 'Ошибка подключения';
+                hideLoader();
+                isLoaded = true;
             }
+        }
+        
+        function hideLoader() {
+            document.getElementById('loading-spinner').style.display = 'none';
+            document.getElementById('voting-buttons').style.display = 'flex';
         }
 
         function hideConfirmation() {
