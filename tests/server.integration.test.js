@@ -56,8 +56,9 @@ describe('Integration Tests - Debate Rating Service', () => {
         }
         
         // Routes (mirroring server.js)
+        let sessionCounter = 0;
         app.post('/api/debate/start', (req, res) => {
-            const sessionId = 'debate_' + Date.now();
+            const sessionId = 'debate_' + Date.now() + '_' + (++sessionCounter);
             const { topic, speakerAName, speakerBName } = req.body || {};
             const session = {
                 id: sessionId,
