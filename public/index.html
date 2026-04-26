@@ -101,17 +101,25 @@
         // Start fingerprint initialization
         initFingerprint();
 
+        // Track previous session ID to detect new sessions
+        let previousSessionId = null;
+        
         // Check session status on load
         async function checkSession() {
             try {
                 const response = await fetch('/api/results');
                 const data = await response.json();
                 
-                // If session was inactive and now active, reset vote
-                if (!wasActive && data.active) {
+                // Reset vote only when a NEW session starts (different session ID)
+                if (data.active && data.sessionId && data.sessionId !== previousSessionId) {
+                    // New session detected - reset vote
+                    previousSessionId = data.sessionId;
                     currentVote = null;
                     localStorage.removeItem('debateCurrentVote');
                     hideConfirmation();
+                } else if (!data.active) {
+                    // Session is inactive
+                    previousSessionId = null;
                 }
                 
                 wasActive = data.active;
