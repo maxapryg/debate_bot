@@ -90,6 +90,7 @@
         let sessionData = JSON.parse(localStorage.getItem('debateSessionData') || 'null');
         let currentVote = null;
         let previousSessionId = null;
+        let isFingerprintReady = false;
         
         // Restore vote only if we have session data
         if (sessionData && sessionData.sessionId) {
@@ -109,13 +110,15 @@
                 const fp = await FingerprintJS.load();
                 const result = await fp.get();
                 fingerprint = result.visitorId;
+                isFingerprintReady = true;
                 console.log('Fingerprint initialized:', fingerprint);
             } catch (error) {
                 console.error('FingerprintJS error:', error);
+                isFingerprintReady = true; // Allow voting even if fingerprint fails
             }
         }
 
-        // Start fingerprint initialization
+        // Start fingerprint initialization and wait for it
         initFingerprint();
 
         let isLoaded = false;
@@ -210,6 +213,12 @@
                 alert('Голосование ещё не началось или завершено');
                 return;
             }
+            
+            // Wait for fingerprint to be ready
+            if (!isFingerprintReady) {
+                alert('Пожалуйста, подождите загрузки системы...');
+                return;
+            }
 
             try {
                 const requestBody = {
@@ -217,8 +226,8 @@
                     voterId: voterId
                 };
 
-                // Add fingerprint if available (for incognito protection)
-                if (fingerprint) {
+                // Always add fingerprint if ready (for incognito protection)
+                if (isFingerprintReady && fingerprint) {
                     requestBody.fingerprint = fingerprint;
                 }
 
