@@ -82,11 +82,20 @@
     <script>
         const socket = io();
         let voterId = localStorage.getItem('debateVoterId');
-        let currentVote = localStorage.getItem('debateCurrentVote');
-        let previousSessionId = localStorage.getItem('debateSessionId');
         let isActive = false;
         let wasActive = false;
         let fingerprint = null;
+        
+        // Get current session data from localStorage
+        let sessionData = JSON.parse(localStorage.getItem('debateSessionData') || 'null');
+        let currentVote = null;
+        let previousSessionId = null;
+        
+        // Restore vote only if we have session data
+        if (sessionData && sessionData.sessionId) {
+            previousSessionId = sessionData.sessionId;
+            currentVote = sessionData.vote;
+        }
 
         // Initialize voter ID
         if (!voterId) {
@@ -117,30 +126,34 @@
                 const response = await fetch('/api/results');
                 const data = await response.json();
                 
-                // Reset vote only when a NEW session starts (different session ID)
+                // Handle session changes
                 if (data.active && data.sessionId) {
+                    // Check if this is a new session (different from stored one)
                     if (previousSessionId && data.sessionId !== previousSessionId) {
                         // New session detected - reset vote
                         currentVote = null;
-                        localStorage.removeItem('debateCurrentVote');
+                        sessionData = { sessionId: data.sessionId, vote: null };
+                        localStorage.setItem('debateSessionData', JSON.stringify(sessionData));
                         hideConfirmation();
+                    } else if (!previousSessionId) {
+                        // First load of this session
+                        sessionData = { sessionId: data.sessionId, vote: null };
+                        localStorage.setItem('debateSessionData', JSON.stringify(sessionData));
                     }
-                    // Save current session ID
                     previousSessionId = data.sessionId;
-                    localStorage.setItem('debateSessionId', previousSessionId);
                 } else if (!data.active) {
-                    // Session is inactive - clear session ID
+                    // Session is inactive - clear session data
                     previousSessionId = null;
-                    localStorage.removeItem('debateSessionId');
+                    sessionData = null;
+                    localStorage.removeItem('debateSessionData');
                 }
                 
                 wasActive = data.active;
                 isActive = data.active;
                 
-                // Update speaker names if available
+                // Update speaker names and hide loader on first load
                 if (data.speakerAName && !isLoaded) {
                     updateSpeakerNames(data.speakerAName, data.speakerBName);
-                    // Hide loader and show voting buttons
                     hideLoader();
                     isLoaded = true;
                 }
@@ -168,13 +181,6 @@
         function updateSpeakerNames(speakerAName, speakerBName) {
             document.getElementById('speaker-a-label').textContent = speakerAName || 'Спикер A';
             document.getElementById('speaker-b-label').textContent = speakerBName || 'Спикер B';
-            
-            // Update confirmation message only if user has actually voted
-            if (currentVote === 'A' || currentVote === 'B') {
-                const confirmationEl = document.getElementById('vote-confirmation');
-                const speakerName = currentVote === 'A' ? speakerAName : speakerBName;
-                confirmationEl.querySelector('.confirmation-text').textContent = `Вы проголосовали за ${speakerName || 'Спикера ' + currentVote}`;
-            }
         }
 
         function updateUI() {
@@ -228,7 +234,9 @@
                 
                 if (data.success) {
                     currentVote = speaker;
-                    localStorage.setItem('debateCurrentVote', speaker);
+                    // Save vote with session data
+                    sessionData = { sessionId: previousSessionId, vote: speaker };
+                    localStorage.setItem('debateSessionData', JSON.stringify(sessionData));
                     showConfirmation(speaker);
                 } else if (response.status === 429) {
                     alert('Слишком много голосов. Подождите минуту.');
